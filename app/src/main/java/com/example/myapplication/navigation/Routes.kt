@@ -6,6 +6,9 @@ import kotlinx.serialization.Serializable
 object FormularioRoute
 
 @Serializable
+object ConfigRoute
+
+@Serializable
 data class ResumenRoute(
     val nombreViajero: String,
     val transporte: String,

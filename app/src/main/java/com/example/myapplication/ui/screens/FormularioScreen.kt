@@ -11,10 +11,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,7 +39,8 @@ import com.example.myapplication.ui.viewmodel.EcoTripViewModel
 @Composable
 fun FormularioScreen(
     viewModel: EcoTripViewModel,
-    onNavigateToResumen: () -> Unit
+    onNavigateToResumen: () -> Unit,
+    onAbrirIdentidad: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -49,6 +52,7 @@ fun FormularioScreen(
         onTransporteChange = viewModel::onTransporteChange,
         onSoloBajaHuellaChange = viewModel::onSoloBajaHuellaChange,
         onModoGrupalChange = viewModel::onModoGrupalChange,
+        onAbrirIdentidad = onAbrirIdentidad,
         onGuardar = {
             // Fuerza la validación de los campos obligatorios aún no tocados.
             viewModel.onDestinoChange(state.destino)
@@ -74,11 +78,23 @@ fun FormularioContent(
     onSoloBajaHuellaChange: (Boolean) -> Unit,
     onModoGrupalChange: (Boolean) -> Unit,
     onGuardar: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAbrirIdentidad: (() -> Unit)? = null
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text("EcoTrip 2026") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("EcoTrip 2026") },
+                actions = {
+                    if (onAbrirIdentidad != null) {
+                        IconButton(onClick = onAbrirIdentidad) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Identidad visual")
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onGuardar) {
                 Icon(Icons.Filled.Check, contentDescription = "Guardar y ver resumen")

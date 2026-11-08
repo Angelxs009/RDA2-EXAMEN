@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" data-modo="insegura">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventario Lab — versión insegura</title>
+<link rel="stylesheet" href="/ui/estilos.css">
+</head>
+<body>
+<div class="banner">VERSIÓN INSEGURA · solo fines didácticos · credenciales ficticias · <span id="url"></span></div>
+<main class="wrap">
+  <header class="top">
+    <div><h1>Inventario Lab</h1><p class="sub">API conectada a PostgreSQL como superusuario, con secretos en el código.</p></div>
+    <div class="badges"><span class="badge bad">Superusuario BD</span><span class="badge bad">Token en código</span><span class="badge bad">/debug activo</span></div>
+  </header>
+  <section class="grid">
+    <article class="card"><h2>Productos</h2>
+      <table><thead><tr><th>ID</th><th>Nombre</th><th class="num">Precio</th></tr></thead><tbody id="productos"><tr><td colspan="3"><div class="skel"></div></td></tr></tbody></table>
+    </article>
+    <article class="card"><h2>Usuarios</h2><p class="nota">La API devuelve todas las columnas, incluido el hash.</p>
+      <table><thead><tr><th>Nombre</th><th>Email</th><th>password_hash</th></tr></thead><tbody id="usuarios"><tr><td colspan="3"><div class="skel"></div></td></tr></tbody></table>
+    </article>
+  </section>
+  <section class="card"><h2>Configuración expuesta · GET /debug</h2><p class="nota">Cualquier visitante sin autenticación obtiene usuario de BD, base y token.</p>
+    <pre class="leak" id="debug">Cargando…</pre>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+$('url').textContent = location.href;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function cargar() {
+  try {
+    const p = await (await fetch('/api/productos')).json();
+    $('productos').innerHTML = p.map((x) => `<tr><td>${x.id}</td><td>${esc(x.nombre)}</td><td class="num">$${Number(x.precio).toFixed(2)}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Sin productos</td></tr>';
+    const u = await (await fetch('/api/usuarios')).json();
+    $('usuarios').innerHTML = u.map((x) => `<tr><td>${esc(x.nombre)}</td><td>${esc(x.email)}</td><td class="leak" title="${esc(x.password_hash)}">${esc(x.password_hash)}</td></tr>`).join('');
+    $('debug').textContent = JSON.stringify(await (await fetch('/debug')).json(), null, 2);
+  } catch (e) { $('debug').textContent = 'Error al cargar: ' + e.message; }
+}
+cargar();
+</script>
+</body>
+</html>

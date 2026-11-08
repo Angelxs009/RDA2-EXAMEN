@@ -1,0 +1,11 @@
+# Secretos: NUNCA se versionan
+.env
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
+*.pem
+*.key
+node_modules/
+logs/
+*.log

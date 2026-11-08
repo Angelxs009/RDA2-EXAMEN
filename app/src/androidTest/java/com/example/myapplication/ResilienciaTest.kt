@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
@@ -36,6 +37,9 @@ class ResilienciaTest {
 
     @Test
     fun rotacion_conservaDestinoYDias() {
+        // La app inicia en el Login (Lab 8.1): se ingresa y se abre el formulario de EcoTrip.
+        composeRule.onNodeWithText("Ingresar al Dashboard").performClick()
+        composeRule.onNodeWithText("Planificar viaje (EcoTrip)").performClick()
         composeRule.onNode(hasText("Destino") and hasSetTextAction()).performTextInput("Quito")
         composeRule.onNode(hasText("Días de duración") and hasSetTextAction()).performTextInput("4")
 

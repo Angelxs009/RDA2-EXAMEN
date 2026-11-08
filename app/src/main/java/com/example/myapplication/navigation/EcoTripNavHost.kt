@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.myapplication.ConfigScreen
 import com.example.myapplication.ui.screens.FormularioScreen
 import com.example.myapplication.ui.screens.ResumenScreen
 import com.example.myapplication.ui.viewmodel.EcoTripViewModel
@@ -22,6 +23,7 @@ fun EcoTripNavHost(
         composable<FormularioRoute> {
             FormularioScreen(
                 viewModel = viewModel,
+                onAbrirIdentidad = { navController.navigate(ConfigRoute) },
                 onNavigateToResumen = {
                     val state = viewModel.uiState.value
                     val diasDuracion = state.diasDuracionTexto.trim().toIntOrNull()
@@ -40,6 +42,10 @@ fun EcoTripNavHost(
                     }
                 }
             )
+        }
+
+        composable<ConfigRoute> {
+            ConfigScreen(onVolver = { navController.popBackStack() })
         }
 
         composable<ResumenRoute> { backStackEntry ->

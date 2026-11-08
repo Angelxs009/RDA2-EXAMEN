@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es" data-modo="segura">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventario Lab — versión segura</title>
+<link rel="stylesheet" href="/ui/estilos.css">
+</head>
+<body>
+<div class="banner">VERSIÓN SEGURA · secretos por variables de entorno · mínimo privilegio · <span id="url"></span></div>
+<main class="wrap">
+  <header class="top">
+    <div><h1>Inventario Lab</h1><p class="sub">Misma API, configurada desde el entorno y con un rol de BD limitado.</p></div>
+    <div class="badges"><span class="badge" id="entorno">Entorno…</span><span class="badge">Rol sin privilegios admin</span><span class="badge">Sin secretos en código</span></div>
+  </header>
+  <section class="grid">
+    <article class="card"><h2>Productos</h2>
+      <table><thead><tr><th>ID</th><th>Nombre</th><th class="num">Precio</th></tr></thead><tbody id="productos"><tr><td colspan="3"><div class="skel"></div></td></tr></tbody></table>
+    </article>
+    <article class="card"><h2>Usuarios</h2><p class="nota">Solo id, nombre y email: el rol de la app no puede leer password_hash.</p>
+      <table><thead><tr><th>ID</th><th>Nombre</th><th>Email</th></tr></thead><tbody id="usuarios"><tr><td colspan="3"><div class="skel"></div></td></tr></tbody></table>
+    </article>
+  </section>
+  <section class="grid">
+    <article class="card"><h2>Agregar producto</h2><p class="nota">La escritura exige el token de API (se pega aquí; no está en el código).</p>
+      <form id="form">
+        <label>Nombre<input name="nombre" required maxlength="80" placeholder="Ej. Regla de 30 cm"></label>
+        <label>Precio (USD)<input name="precio" type="number" min="0" step="0.01" required placeholder="1.20"></label>
+        <label>Token de API<input name="token" type="password" autocomplete="off" placeholder="Bearer token"></label>
+        <button type="submit">Guardar producto</button>
+        <div class="msg" id="resultado" hidden></div>
+      </form>
+    </article>
+    <article class="card"><h2>Verificaciones en vivo</h2><p class="nota">Peticiones reales que hace esta página al cargar.</p>
+      <ul class="checks" id="checks"><li><div class="skel" style="width:100%"></div></li></ul>
+    </article>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+$('url').textContent = location.href;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function cargar() {
+  const h = await (await fetch('/health')).json();
+  $('entorno').textContent = 'Entorno: ' + h.entorno;
+  const p = await (await fetch('/api/productos')).json();
+  $('productos').innerHTML = p.map((x) => `<tr><td>${x.id}</td><td title="${esc(x.nombre)}">${esc(x.nombre)}</td><td class="num">$${Number(x.precio).toFixed(2)}</td></tr>`).join('') || '<tr><td colspan="3" class="vacio">Aún no hay productos</td></tr>';
+  const ur = await fetch('/api/usuarios'); const u = await ur.json();
+  $('usuarios').innerHTML = u.map((x) => `<tr><td>${x.id}</td><td>${esc(x.nombre)}</td><td>${esc(x.email)}</td></tr>`).join('');
+  const pruebas = [
+    ['GET /debug', (await fetch('/debug')).status, (s) => s === 404, 'no existe'],
+    ['POST /admin/sql', (await fetch('/admin/sql', { method: 'POST' })).status, (s) => s === 404, 'no existe'],
+    ['POST /api/productos sin token', (await fetch('/api/productos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"nombre":"x","precio":1}' })).status, (s) => s === 401, 'rechazado'],
+    ['password_hash en /api/usuarios', JSON.stringify(u).includes('password_hash') ? 'presente' : 'ausente', (s) => s === 'ausente', ''],
+  ];
+  $('checks').innerHTML = pruebas.map(([n, v, ok, t]) => `<li><code>${esc(n)}</code><span class="badge ${ok(v) ? '' : 'bad'}">${esc(v)}${t ? ' · ' + t : ''}</span></li>`).join('');
+}
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target), r = $('resultado'), b = e.target.querySelector('button');
+  b.disabled = true; r.hidden = false; r.className = 'msg'; r.textContent = 'Guardando…';
+  try {
+    const res = await fetch('/api/productos', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + f.get('token') }, body: JSON.stringify({ nombre: f.get('nombre'), precio: f.get('precio') }) });
+    const j = await res.json();
+    r.className = 'msg ' + (res.ok ? 'ok' : 'bad');
+    r.textContent = res.ok ? `Producto creado (id ${j.id})` : `Rechazado: ${j.error} (HTTP ${res.status})`;
+    if (res.ok) { e.target.reset(); cargar(); }
+  } catch (err) { r.className = 'msg bad'; r.textContent = 'No se pudo conectar con el servidor.'; }
+  b.disabled = false;
+});
+cargar().catch(() => { $('checks').innerHTML = '<li>No se pudo cargar. Verifica que el servidor esté activo.</li>'; });
+</script>
+</body>
+</html>

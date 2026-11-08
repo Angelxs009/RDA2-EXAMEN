@@ -1,6 +1,7 @@
 package com.example.myapplication.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -114,6 +115,12 @@ class EcoTripViewModel(
                 )
             )
         }
+    }
+
+    /** Caso 4: se invoca justo antes de destruir definitivamente este ViewModel. */
+    override fun onCleared() {
+        super.onCleared()
+        Log.d("EcoTrip_Lifecycle", "Memoria del viaje liberada.")
     }
 
     /** Sincroniza el estado de UI con lo guardado en DataStore. */
